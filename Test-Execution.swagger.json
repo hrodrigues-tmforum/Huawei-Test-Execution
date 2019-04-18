@@ -1,0 +1,513 @@
+{
+  "openapi": "3.0.0",
+  "servers": [],
+  "info": {
+    "description": "This API provides a contract for test case execution. Please see description for individual tags for more detail on the managed artifacts.",
+    "version": "1.0.0-oas3",
+    "title": "Test Execution API",
+    "contact": {
+      "email": "frank.massoudian@huawei.com"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+  },
+  "tags": [
+    {
+      "name": "Runtime Test Environment",
+      "description": "Calls that manage allocation, provisioning and release of test environments"
+    },
+    {
+      "name": "Test Execution",
+      "description": "Calls that manage execution of test cases"
+    }
+  ],
+  "paths": {
+    "/runtimeTestEnvironment": {
+      "post": {
+        "tags": [
+          "Runtime Test Environment"
+        ],
+        "summary": "Requests creation and provisioning of the test execution environment",
+        "operationId": "requestTestEnvironment",
+        "description": "By passing in the abstract environment definition, you can create and provision the concrete environment that will be dynamically created based on the resource availability",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AbstractEnvironmentRequest"
+              }
+            }
+          },
+          "description": "The abstract environment definition that is used to build and provision the concrete test execution environment"
+        },
+        "responses": {
+          "201": {
+            "description": "Test Environment request created sucessfully; return value is the execution task ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Id"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        },
+        "callbacks": {
+          "environmentSuccessCallback": {
+            "{$request.body#/callbackUrl}": {
+              "post": {
+                "requestBody": {
+                  "required": true,
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/EnvironmentSuccessCallback"
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "Callback accepted"
+                  }
+                }
+              }
+            }
+          },
+          "environmentFailureCallback": {
+            "{$request.body#/callbackUrl}": {
+              "post": {
+                "requestBody": {
+                  "required": true,
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/EnvironmentFailureCallback"
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "Callback accepted"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/runtimeTestEnvironment/{environmentId}": {
+      "get": {
+        "tags": [
+          "Runtime Test Environment"
+        ],
+        "summary": "Finds a test environment",
+        "operationId": "findTestEnvironment",
+        "description": "By specifying the test environment UUID you can find the corresponding test environment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "environmentId",
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            },
+            "required": true,
+            "description": "Environment UUID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Specified test environment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "uri",
+                  "example": "https://myserver.com/env-rm"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Specified test case model not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Runtime Test Environment"
+        ],
+        "summary": "Releases the specified test environment",
+        "operationId": "releaseTestEnvironment",
+        "description": "By specifying the test environment UUID you can release the corresponding test environment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "environmentId",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Specified test environment successfully deleted"
+          },
+          "404": {
+            "description": "Specified test environment not found"
+          }
+        }
+      }
+    },
+    "/testExecution": {
+      "post": {
+        "tags": [
+          "Test Execution"
+        ],
+        "summary": "Requests execution of a test case suite",
+        "operationId": "requestTestExecution",
+        "description": "By passing in the test case suite, you can execute test cases in the suite",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecutionRequest"
+              }
+            }
+          },
+          "description": "The test case suite definition"
+        },
+        "responses": {
+          "201": {
+            "description": "Test suite is accepted for execution; return value is the test execution ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Id"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        },
+        "callbacks": {
+          "executionCallback": {
+            "{$request.body#/callbackUrl}": {
+              "post": {
+                "requestBody": {
+                  "required": true,
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/ExecutionCallback"
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "Callback accepted"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/testExecution/{executionId}": {
+      "get": {
+        "tags": [
+          "Test Execution"
+        ],
+        "summary": "Requests execution summary of a test execution task",
+        "operationId": "requestTestExecutionSummary",
+        "description": "By specifying the test execution task UUID you can get the execution summary of an executing task",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "executionId",
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            },
+            "required": true,
+            "description": "Execution task UUID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Execution summary of the specified execution task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutionSummary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Specified test execution task not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Test Execution"
+        ],
+        "summary": "Cancels of aborts the specified test execution task",
+        "operationId": "cancelTestExecution",
+        "description": "By specifying the test execution task UUID you can cancel or abort the corresponding test execution task",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "executionId",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            },
+            "description": "Execution task UUID"
+          },
+          {
+            "in": "query",
+            "name": "abort",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "if set to true all executing test cases are aborted immediately; if missing or set to false executing test cases are allowed to complete but no new test cases are started"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cancellation of the specified test execution task successfully accepted"
+          },
+          "404": {
+            "description": "Specified test execution task not found"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AbstractEnvironmentRequest": {
+        "type": "object",
+        "properties": {
+          "abstractEnvironmentNamespace": {
+            "type": "string",
+            "example": "abstract.environment.namespace"
+          },
+          "abstractEnvironmentId": {
+            "type": "string"
+          },
+          "dataCorrelationId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "resourceManagerUrl": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://myserver.com/rm"
+          },
+          "callbackUrl": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://myserver.com/send/callback/here"
+          },
+          "timeoutSec": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Maximum time to wait for resource availability. If present and non-zero a satisfiable request will time out after the specified number of seconds. If absent or equal to zero a satisfiable request will wait until it can be granted. Unsatisfiable requests fail immediately regardless of the specified timeout."
+          }
+        },
+        "required": [
+          "abstractEnvironment",
+          "callbackUrl"
+        ]
+      },
+      "EnvironmentSuccessCallback": {
+        "type": "object",
+        "properties": {
+          "executionTaskId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "dataCorrelationId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "ready"
+            ],
+            "description": "Operation result:\n  * 'ready' - environment created and provisioned successfully and is ready for test case execution"
+          },
+          "envResourceManagerUrl": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://myserver.com/env-rm"
+          },
+          "envMappingUrl": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://myserver.com/env-mapping",
+            "description": "The URL for abstract to concrete resource mapping. If concrete resources need to be additionally provisioned this mapping can be used to run custom provisioning."
+          }
+        },
+        "required": [
+          "executionTaskId",
+          "result",
+          "envResourceManagerUrl",
+          "envMappingUrl"
+        ]
+      },
+      "EnvironmentFailureCallback": {
+        "type": "object",
+        "properties": {
+          "executionTaskId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "dataCorrelationId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "failedUnsatisfiable",
+              "failedTimedout",
+              "failedProvisioning"
+            ],
+            "example": "failedTimeout",
+            "description": "Operation result:\n  * 'failedUnsatisfiable' - environment creation failed because the abstract environment contained unsatisfiable resource requirements\n  * 'failedTimeout' - environment creation failed because the request timed out waiting for resource availability\n  * 'failedProvisioning' - environment provisioning failed"
+          },
+          "message": {
+            "type": "string",
+            "example": "Timed out after 300 seconds waiting for 'IMS_subscriber'",
+            "description": "Reason for the failure"
+          }
+        },
+        "required": [
+          "result",
+          "environmentId"
+        ]
+      },
+      "ExecutionRequest": {
+        "type": "object",
+        "properties": {
+          "testCaseSuiteNamespace": {
+            "type": "string",
+            "example": "test.suite.namespace"
+          },
+          "testCaseSuiteId": {
+            "type": "string"
+          },
+          "dataCorrelationId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "callbackUrl": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://myserver.com/send/callback/here"
+          },
+          "envResourceManagerUrl": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://myserver.com/env-rm"
+          },
+          "testDataUrlList": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri",
+              "example": "https://myserver.com/test-data/my-test-data"
+            }
+          }
+        },
+        "required": [
+          "testCaseSuiteId",
+          "callbackUrl",
+          "envResourceManagerUrl"
+        ]
+      },
+      "ExecutionCallback": {
+        "type": "object",
+        "properties": {
+          "executionTaskId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "dataCorrelationId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "canceled",
+              "aborted"
+            ],
+            "description": "Operation result:\n  * 'completed' - execution task completed successfully\n  * 'canceled' - execution task was canceled\n  * 'aborted' - execution task was aborted"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ExecutionSummary"
+          },
+          "resultId": {
+            "$ref": "#/components/schemas/Id"
+          }
+        },
+        "required": [
+          "executionTaskID",
+          "status",
+          "summary",
+          "resultId"
+        ]
+      },
+      "ExecutionSummary": {
+        "type": "object",
+        "properties": {
+          "passed": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 50
+          },
+          "failed": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 5
+          },
+          "executionStartTime": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1536959275072,
+            "description": "UNIX formatted timestamp in milliseconds"
+          },
+          "executionEndTime": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1536959297390,
+            "description": "UNIX formatted timestamp in milliseconds"
+          }
+        },
+        "required": [
+          "passed",
+          "failed",
+          "executionStartTime",
+          "executionEndTime"
+        ]
+      },
+      "Id": {
+        "type": "string",
+        "format": "uuid",
+        "example": "d290f1ee-6c54-4b01-90e6-d701748f0851"
+      }
+    }
+  }
+}
